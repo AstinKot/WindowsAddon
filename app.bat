@@ -2,6 +2,15 @@
 chcp 65001 > nul
 setlocal
 
+if exist license.txt (
+    del "license.txt"
+    goto ok_license
+) else (
+    goto ok_license
+)
+
+:ok_license
+
 set "version=1.0.0"
 set "beta=yes"
 
