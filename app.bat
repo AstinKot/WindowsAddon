@@ -4,10 +4,20 @@ chcp 65001 > nul
 color 0a
 setlocal EnableDelayedExpansion
 
+:: Проверка на наличие прав администратора
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Требуются права администратора. Запуск от имени администратора...
+    runas /user:%COMPUTERNAME%\Администратор "cmd /c \"%~f0\"" >nul 2>&1
+    if %errorlevel% neq 0 (
+        powershell Start-Process -FilePath cmd -ArgumentList "/c ""%~f0""" -Verb RunAs
+    )
+    exit /b
+)
+
 :: Удаляем лицензию (если существует)
 if exist "license.txt" del /F /Q "license.txt" > nul
 
-:: Основная страница меню
 :main_menu
 cls
 echo ================================
@@ -23,18 +33,18 @@ echo 7. Резервное копирование данных
 echo 8. Информация о системе
 echo 0. Выход
 echo -------------------------------
-choice /C 123456780 /N /M "Выберите действие:"
-if errorlevel 9 goto exit_app
-if errorlevel 8 goto sysinfo
-if errorlevel 7 goto backup_data
-if errorlevel 6 goto personalization
-if errorlevel 5 goto account_security
-if errorlevel 4 goto localization
-if errorlevel 3 goto security_settings
-if errorlevel 2 goto install_programs
-if errorlevel 1 goto network_settings
+set /P choice="Выберите действие: "
+if "%choice%"=="1" goto network_settings
+if "%choice%"=="2" goto install_programs
+if "%choice%"=="3" goto security_settings
+if "%choice%"=="4" goto localization
+if "%choice%"=="5" goto account_security
+if "%choice%"=="6" goto personalization
+if "%choice%"=="7" goto backup_data
+if "%choice%"=="8" goto sysinfo
+if "%choice%"=="0" goto exit_app
+goto main_menu
 
-:: Подменю настройки сети
 :network_settings
 cls
 echo Настройки сети и подключения
@@ -44,14 +54,14 @@ echo 2. VPN-подключение
 echo 3. Интернет-браузеры
 echo 4. Проверка скорости соединения
 echo 0. Назад
-choice /C 12340 /N /M "Выберите пункт меню:"
-if errorlevel 5 goto main_menu
-if errorlevel 4 netsh wlan show interfaces && ping google.com
-if errorlevel 3 start ms-settings:browsers
-if errorlevel 2 start ms-settings:vpn
-if errorlevel 1 start ms-settings:network-wifi
+set /P choice="Выберите пункт меню: "
+if "%choice%"=="1" start ms-settings:network-wifi
+if "%choice%"=="2" start ms-settings:vpn
+if "%choice%"=="3" start ms-settings:browsers
+if "%choice%"=="4" netsh wlan show interfaces && ping google.com
+if "%choice%"=="0" goto main_menu
+goto network_settings
 
-:: Подменю установки полезных программ
 :install_programs
 cls
 echo Установка полезных программ
@@ -63,16 +73,16 @@ echo 4. Skype
 echo 5. Telegram Desktop
 echo 6. Steam
 echo 0. Назад
-choice /C 1234560 /N /M "Выберите приложение для установки:"
-if errorlevel 7 goto main_menu
-if errorlevel 6 start https://steamcdn-a.akamaihd.net/client/installer/SteamSetup.exe
-if errorlevel 5 start https://desktop.telegram.org
-if errorlevel 4 start https://www.skype.com/en/get-skype
-if errorlevel 3 start https://get.adobe.com/reader
-if errorlevel 2 start https://office.live.com/download
-if errorlevel 1 start https://www.google.ru/chrome
+set /P choice="Выберите приложение для установки: "
+if "%choice%"=="1" start https://www.google.ru/chrome
+if "%choice%"=="2" start https://office.live.com/download
+if "%choice%"=="3" start https://get.adobe.com/reader
+if "%choice%"=="4" start https://www.skype.com/en/get-skype
+if "%choice%"=="5" start https://desktop.telegram.org
+if "%choice%"=="6" start https://steamcdn-a.akamaihd.net/client/installer/SteamSetup.exe
+if "%choice%"=="0" goto main_menu
+goto install_programs
 
-:: Подменю безопасности
 :security_settings
 cls
 echo Параметры безопасности
@@ -82,14 +92,14 @@ echo 2. Брандмауэр
 echo 3. Центр обновления Windows
 echo 4. Конфиденциальность
 echo 0. Назад
-choice /C 12340 /N /M "Выберите пункт меню:"
-if errorlevel 5 goto main_menu
-if errorlevel 4 start ms-settings:privacy
-if errorlevel 3 start ms-settings:windowsupdate
-if errorlevel 2 start control /name Microsoft.WindowsFirewall
-if errorlevel 1 start ms-settings:windowsdefender
+set /P choice="Выберите пункт меню: "
+if "%choice%"=="1" start ms-settings:windowsdefender
+if "%choice%"=="2" start control /name Microsoft.WindowsFirewall
+if "%choice%"=="3" start ms-settings:windowsupdate
+if "%choice%"=="4" start ms-settings:privacy
+if "%choice%"=="0" goto main_menu
+goto security_settings
 
-:: Подменю локализации
 :localization
 cls
 echo Локализация и региональные стандарты
@@ -98,13 +108,13 @@ echo 1. Язык интерфейса
 echo 2. Формат даты и времени
 echo 3. Клавиатура и раскладка
 echo 0. Назад
-choice /C 1230 /N /M "Выберите пункт меню:"
-if errorlevel 4 goto main_menu
-if errorlevel 3 start ms-settings:typing
-if errorlevel 2 start ms-settings:regionformat
-if errorlevel 1 start ms-settings:language
+set /P choice="Выберите пункт меню: "
+if "%choice%"=="1" start ms-settings:language
+if "%choice%"=="2" start ms-settings:regionformat
+if "%choice%"=="3" start ms-settings:typing
+if "%choice%"=="0" goto main_menu
+goto localization
 
-:: Подменю защиты учётной записи
 :account_security
 cls
 echo Пароль и защита учётной записи
@@ -113,13 +123,13 @@ echo 1. Задать пароль для входа
 echo 2. Двухэтапная аутентификация
 echo 3. Вход в систему
 echo 0. Назад
-choice /C 1230 /N /M "Выберите пункт меню:"
-if errorlevel 4 goto main_menu
-if errorlevel 3 start ms-settings:signinoptions
-if errorlevel 2 start ms-settings:accounts
-if errorlevel 1 start net user %username% *
+set /P choice="Выберите пункт меню: "
+if "%choice%"=="1" start net user %username% *
+if "%choice%"=="2" start ms-settings:accounts
+if "%choice%"=="3" start ms-settings:signinoptions
+if "%choice%"=="0" goto main_menu
+goto account_security
 
-:: Подменю персонализации
 :personalization
 cls
 echo Темы оформления и персонализация
@@ -128,13 +138,13 @@ echo 1. Выбор фона рабочего стола
 echo 2. Цветовые схемы
 echo 3. Экранные заставки
 echo 0. Назад
-choice /C 1230 /N /M "Выберите пункт меню:"
-if errorlevel 4 goto main_menu
-if errorlevel 3 start ms-settings:lockscreen
-if errorlevel 2 start ms-settings:colors
-if errorlevel 1 start ms-settings:background
+set /P choice="Выберите пункт меню: "
+if "%choice%"=="1" start ms-settings:background
+if "%choice%"=="2" start ms-settings:colors
+if "%choice%"=="3" start ms-settings:lockscreen
+if "%choice%"=="0" goto main_menu
+goto personalization
 
-:: Подменю резервного копирования
 :backup_data
 cls
 echo Резервное копирование данных
@@ -142,12 +152,12 @@ echo -----------------------------
 echo 1. Создать резервную копию
 echo 2. Восстановить из резервной копии
 echo 0. Назад
-choice /C 120 /N /M "Выберите пункт меню:"
-if errorlevel 3 goto main_menu
-if errorlevel 2 start ms-settings:recovery
-if errorlevel 1 start wbadmin start backup
+set /P choice="Выберите пункт меню: "
+if "%choice%"=="1" start wbadmin start backup
+if "%choice%"=="2" start ms-settings:recovery
+if "%choice%"=="0" goto main_menu
+goto backup_data
 
-:: Информационная панель
 :sysinfo
 cls
 echo Информация о системе
@@ -156,7 +166,6 @@ systeminfo
 timeout /t 10 > nul
 goto main_menu
 
-:: Выход из программы
 :exit_app
 cls
 echo Спасибо за использование Windows Addon!
